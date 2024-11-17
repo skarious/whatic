@@ -55,12 +55,12 @@ import { isEmpty } from "lodash";
 import moment from "moment";
 import { ChartsDate } from "./ChartsDate";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   container: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.padding,
     paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(2),
+    paddingRight: theme.spacing(2)
   },
   fixedHeightPaper: {
     padding: theme.spacing(2),
@@ -68,62 +68,62 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: 240,
     overflowY: "auto",
-    ...theme.scrollbarStyles,
+    ...theme.scrollbarStyles
   },
   cardAvatar: {
     fontSize: "55px",
     color: grey[500],
     backgroundColor: "#ffffff",
     width: theme.spacing(7),
-    height: theme.spacing(7),
+    height: theme.spacing(7)
   },
   cardTitle: {
     fontSize: "18px",
-    color: blue[700],
+    color: blue[700]
   },
   cardSubtitle: {
     color: grey[600],
-    fontSize: "14px",
+    fontSize: "14px"
   },
   alignRight: {
-    textAlign: "right",
+    textAlign: "right"
   },
   fullWidth: {
-    width: "100%",
+    width: "100%"
   },
   selectContainer: {
     width: "100%",
-    textAlign: "left",
+    textAlign: "left"
   },
   iframeDashboard: {
     width: "100%",
     height: "calc(100vh - 64px)",
-    border: "none",
+    border: "none"
   },
   container: {
     paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
+    paddingBottom: theme.spacing(4)
   },
   fixedHeightPaper: {
     padding: theme.spacing(2),
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
-    height: 240,
+    height: 240
   },
   customFixedHeightPaper: {
     padding: theme.spacing(2),
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
-    height: 120,
+    height: 120
   },
   customFixedHeightPaperLg: {
     padding: theme.spacing(2),
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
-    height: "100%",
+    height: "100%"
   },
   card0: {
     padding: theme.spacing(2),
@@ -132,7 +132,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card00: {
     padding: theme.spacing(2),
@@ -141,7 +141,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card1: {
     padding: theme.spacing(2),
@@ -150,7 +150,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card2: {
     padding: theme.spacing(2),
@@ -159,7 +159,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card3: {
     padding: theme.spacing(2),
@@ -168,7 +168,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card4: {
     padding: theme.spacing(2),
@@ -177,7 +177,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card5: {
     padding: theme.spacing(2),
@@ -186,7 +186,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card6: {
     padding: theme.spacing(2),
@@ -195,7 +195,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card7: {
     padding: theme.spacing(2),
@@ -204,7 +204,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card8: {
     padding: theme.spacing(2),
@@ -213,7 +213,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   card9: {
     padding: theme.spacing(2),
@@ -222,14 +222,14 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     height: "100%",
     backgroundColor: "#0042DA",
-    color: "#eee",
+    color: "#eee"
   },
   fixedHeightPaper2: {
     padding: theme.spacing(2),
     display: "flex",
     overflow: "auto",
-    flexDirection: "column",
-  },
+    flexDirection: "column"
+  }
 }));
 
 const Dashboard = () => {
@@ -260,7 +260,7 @@ const Dashboard = () => {
   var userQueueIds = [];
 
   if (user.queues && user.queues.length > 0) {
-    userQueueIds = user.queues.map((q) => q.id);
+    userQueueIds = user.queues.map(q => q.id);
   }
 
   useEffect(() => {
@@ -294,21 +294,21 @@ const Dashboard = () => {
 
     if (period > 0) {
       params = {
-        days: period,
+        days: period
       };
     }
 
     if (!isEmpty(dateFrom) && moment(dateFrom).isValid()) {
       params = {
         ...params,
-        date_from: moment(dateFrom).format("YYYY-MM-DD"),
+        date_from: moment(dateFrom).format("YYYY-MM-DD")
       };
     }
 
     if (!isEmpty(dateTo) && moment(dateTo).isValid()) {
       params = {
         ...params,
-        date_to: moment(dateTo).format("YYYY-MM-DD"),
+        date_to: moment(dateTo).format("YYYY-MM-DD")
       };
     }
 
@@ -340,7 +340,7 @@ const Dashboard = () => {
   const GetUsers = () => {
     let count;
     let userOnline = 0;
-    attendants.forEach((user) => {
+    attendants.forEach(user => {
       if (user.online === true) {
         userOnline = userOnline + 1;
       }
@@ -349,7 +349,7 @@ const Dashboard = () => {
     return count;
   };
 
-  const GetContacts = (all) => {
+  const GetContacts = all => {
     let props = {};
     if (all) {
       props = {};
@@ -367,10 +367,10 @@ const Dashboard = () => {
               label="Data Inicial"
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={e => setDateFrom(e.target.value)}
               className={classes.fullWidth}
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
             />
           </Grid>
@@ -379,10 +379,10 @@ const Dashboard = () => {
               label="Data Final"
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={e => setDateTo(e.target.value)}
               className={classes.fullWidth}
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
             />
           </Grid>
@@ -397,7 +397,7 @@ const Dashboard = () => {
               labelId="period-selector-label"
               id="period-selector"
               value={period}
-              onChange={(e) => handleChangePeriod(e.target.value)}
+              onChange={e => handleChangePeriod(e.target.value)}
             >
               <MenuItem value={0}>Nenhum selecionado</MenuItem>
               <MenuItem value={3}>Últimos 3 dias</MenuItem>
@@ -425,7 +425,7 @@ const Dashboard = () => {
               <Select
                 labelId="period-selector-label"
                 value={filterType}
-                onChange={(e) => handleChangeFilterType(e.target.value)}
+                onChange={e => handleChangeFilterType(e.target.value)}
               >
                 <MenuItem value={1}>Filtro por Data</MenuItem>
                 <MenuItem value={2}>Filtro por Período</MenuItem>
@@ -471,7 +471,7 @@ const Dashboard = () => {
                     <MobileFriendlyIcon
                       style={{
                         fontSize: 100,
-                        color: "#fff",
+                        color: "#fff"
                       }}
                     />
                   </Grid>
@@ -503,7 +503,7 @@ const Dashboard = () => {
                     <StoreIcon
                       style={{
                         fontSize: 100,
-                        color: "#FF34B3",
+                        color: "#FFFFFF"
                       }}
                     />
                   </Grid>
@@ -534,7 +534,7 @@ const Dashboard = () => {
                   <CallIcon
                     style={{
                       fontSize: 100,
-                      color: "#0b708c",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
@@ -564,7 +564,7 @@ const Dashboard = () => {
                   <HourglassEmptyIcon
                     style={{
                       fontSize: 100,
-                      color: "#47606e",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
@@ -636,7 +636,7 @@ const Dashboard = () => {
                   <CheckCircleIcon
                     style={{
                       fontSize: 100,
-                      color: "#5852ab",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
@@ -666,7 +666,7 @@ const Dashboard = () => {
                   <GroupAddIcon
                     style={{
                       fontSize: 100,
-                      color: "#8c6b19",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
@@ -696,7 +696,7 @@ const Dashboard = () => {
                   <AccessAlarmIcon
                     style={{
                       fontSize: 100,
-                      color: "#7a3f26",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
@@ -726,7 +726,7 @@ const Dashboard = () => {
                   <TimerIcon
                     style={{
                       fontSize: 100,
-                      color: "#8a2c40",
+                      color: "#FFFFFF"
                     }}
                   />
                 </Grid>
