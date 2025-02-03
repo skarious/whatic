@@ -37,8 +37,9 @@ echo "Iniciando instalación automática..."
 echo
 
 # Configurar valores por defecto
-DOMAIN=${1:-"example.com"}
-ADMIN_EMAIL=${2:-"admin@$DOMAIN"}
+FRONTEND_DOMAIN=${1:-"app.example.com"}
+BACKEND_DOMAIN=${2:-"api.example.com"}
+ADMIN_EMAIL=${3:-"admin@$FRONTEND_DOMAIN"}
 DB_PASS=$(generate_password)
 REDIS_PASS=$(generate_password)
 SMTP_HOST="smtp.gmail.com"
@@ -48,7 +49,8 @@ SMTP_PASS="your-email-password"
 
 echo "📝 Usando la siguiente configuración:"
 echo "===================================="
-echo "Domain: $DOMAIN"
+echo "Frontend Domain: $FRONTEND_DOMAIN"
+echo "Backend Domain: $BACKEND_DOMAIN"
 echo "Admin Email: $ADMIN_EMAIL"
 echo "Database Password: $DB_PASS"
 echo "Redis Password: $REDIS_PASS"
@@ -113,8 +115,8 @@ npm run build || handle_error "Error compilando el backend"
 echo "⚙️ Configurando variables de entorno del backend..."
 cat > .env << EOL
 NODE_ENV=production
-BACKEND_URL=https://$DOMAIN
-FRONTEND_URL=https://$DOMAIN
+BACKEND_URL=https://$BACKEND_DOMAIN
+FRONTEND_URL=https://$FRONTEND_DOMAIN
 PROXY_PORT=8080
 PORT=8080
 
@@ -159,7 +161,7 @@ npm run build || handle_error "Error compilando el frontend"
 
 # Setup frontend environment
 cat > .env << EOL
-REACT_APP_BACKEND_URL=https://$DOMAIN
+REACT_APP_BACKEND_URL=https://$BACKEND_DOMAIN
 REACT_APP_HOURS_CLOSE_TICKETS_AUTO=24
 EOL
 
@@ -173,18 +175,28 @@ sudo apt-get install -y nginx || handle_error "Error instalando Nginx"
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Create nginx configuration
-sudo tee /etc/nginx/sites-available/whatic << EOF
+# Create nginx configuration for frontend
+echo "📝 Configurando Nginx para Frontend..."
+sudo tee /etc/nginx/sites-available/whatic-frontend << EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name $FRONTEND_DOMAIN;
 
     location / {
         root /var/www/whatic;
         try_files \$uri \$uri/ /index.html;
     }
+}
+EOF
 
-    location /api {
+# Create nginx configuration for backend
+echo "📝 Configurando Nginx para Backend..."
+sudo tee /etc/nginx/sites-available/whatic-backend << EOF
+server {
+    listen 80;
+    server_name $BACKEND_DOMAIN;
+
+    location / {
         proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
@@ -204,8 +216,9 @@ server {
 }
 EOF
 
-# Enable the site
-sudo ln -s /etc/nginx/sites-available/whatic /etc/nginx/sites-enabled/ 2>/dev/null || true
+# Enable the sites
+sudo ln -s /etc/nginx/sites-available/whatic-frontend /etc/nginx/sites-enabled/ 2>/dev/null || true
+sudo ln -s /etc/nginx/sites-available/whatic-backend /etc/nginx/sites-enabled/ 2>/dev/null || true
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # Copy frontend build to nginx directory
@@ -215,9 +228,10 @@ sudo cp -r build/* /var/www/whatic/
 # Restart nginx
 sudo systemctl restart nginx || handle_error "Error reiniciando Nginx"
 
-# Install SSL certificate
-echo "🔒 Instalando certificado SSL..."
-sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL || echo "⚠️ Warning: Error al instalar SSL, podrás instalarlo manualmente después"
+# Install SSL certificates
+echo "🔒 Instalando certificados SSL..."
+sudo certbot --nginx -d $FRONTEND_DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL || echo "⚠️ Warning: Error al instalar SSL para frontend"
+sudo certbot --nginx -d $BACKEND_DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL || echo "⚠️ Warning: Error al instalar SSL para backend"
 
 # Save PM2 process list and configure startup
 pm2 save
@@ -227,7 +241,9 @@ echo "✅ ¡Instalación completada!"
 echo
 echo "📝 Credenciales y Detalles:"
 echo "============================"
-echo "URL del sistema: https://$DOMAIN"
+echo "URLs del sistema:"
+echo "- Frontend: https://$FRONTEND_DOMAIN"
+echo "- Backend: https://$BACKEND_DOMAIN"
 echo "Email admin: $ADMIN_EMAIL"
 echo
 echo "Database:"
@@ -238,7 +254,7 @@ echo
 echo "Redis:"
 echo "- Contraseña: $REDIS_PASS"
 echo
-echo "🔒 SSL: Certificado instalado automáticamente"
+echo "🔒 SSL: Certificados instalados automáticamente"
 echo
 echo "💡 Recomendaciones:"
 echo "1. Guarda estas credenciales en un lugar seguro"
