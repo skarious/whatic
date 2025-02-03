@@ -1,92 +1,98 @@
 #!/bin/bash
 
-# Función para solicitar input con valor por defecto
-ask_value() {
+# Función para manejar errores
+handle_error() {
+    echo "❌ Error: $1"
+    exit 1
+}
+
+# Función para solicitar input con timeout
+ask_value_with_timeout() {
     local prompt="$1"
     local default="$2"
     local value
+    local timeout=30
 
+    # Usar read con timeout
     echo -n "$prompt [$default]: "
-    read value
-    echo "${value:-$default}"
+    if read -t $timeout value; then
+        echo "${value:-$default}"
+    else
+        echo "$default"
+    fi
 }
 
 # Función para generar una contraseña aleatoria
 generate_password() {
-    openssl rand -base64 12 | tr -dc 'a-zA-Z0-9' | head -c 12
+    < /dev/urandom tr -dc 'A-Za-z0-9' | head -c12 || echo "defaultpass123"
 }
+
+# Capturar errores
+trap 'handle_error "Se produjo un error inesperado en la línea $LINENO"' ERR
 
 clear
 echo "🚀 Whatic Installation Wizard"
 echo "=============================="
-echo "Por favor, proporciona la siguiente información:"
+echo "Iniciando instalación automática..."
 echo
 
-# Recopilar información
-DOMAIN=$(ask_value "Dominio (sin http/https)" "example.com")
-ADMIN_EMAIL=$(ask_value "Email del administrador" "admin@$DOMAIN")
-DB_PASS=$(ask_value "Contraseña de la base de datos" "$(generate_password)")
-REDIS_PASS=$(ask_value "Contraseña de Redis" "$(generate_password)")
+# Configurar valores por defecto
+DOMAIN=${1:-"example.com"}
+ADMIN_EMAIL=${2:-"admin@$DOMAIN"}
+DB_PASS=$(generate_password)
+REDIS_PASS=$(generate_password)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="$ADMIN_EMAIL"
+SMTP_PASS="your-email-password"
 
-# Configuración del correo
-SMTP_HOST=$(ask_value "Servidor SMTP" "smtp.gmail.com")
-SMTP_PORT=$(ask_value "Puerto SMTP" "587")
-SMTP_USER=$(ask_value "Usuario SMTP" "$ADMIN_EMAIL")
-SMTP_PASS=$(ask_value "Contraseña SMTP" "")
-
-# Confirmar configuración
-echo
-echo "📝 Resumen de la configuración:"
-echo "=============================="
+echo "📝 Usando la siguiente configuración:"
+echo "===================================="
 echo "Domain: $DOMAIN"
 echo "Admin Email: $ADMIN_EMAIL"
 echo "Database Password: $DB_PASS"
 echo "Redis Password: $REDIS_PASS"
-echo "SMTP: $SMTP_HOST:$SMTP_PORT"
 echo
 
-echo -n "¿Continuar con la instalación? [Y/n] "
-read confirm
-if [[ "$confirm" =~ ^[Nn] ]]; then
-    echo "❌ Instalación cancelada"
-    exit 1
-fi
+# Continuar automáticamente después de 5 segundos
+echo "Iniciando instalación en 5 segundos..."
+sleep 5
 
 echo "🚀 Iniciando instalación..."
 
 # Update system
 echo "📦 Actualizando paquetes del sistema..."
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y || handle_error "Error actualizando el sistema"
 
 # Install dependencies if not present
 command -v node >/dev/null 2>&1 || {
     echo "📥 Instalando Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-    sudo apt-get install -y nodejs
+    curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - || handle_error "Error configurando Node.js"
+    sudo apt-get install -y nodejs || handle_error "Error instalando Node.js"
 }
 
 command -v pm2 >/dev/null 2>&1 || {
     echo "📥 Instalando PM2..."
-    sudo npm install -g pm2
+    sudo npm install -g pm2 || handle_error "Error instalando PM2"
 }
 
 # Install and configure PostgreSQL
 echo "🐘 Instalando PostgreSQL..."
-sudo apt install -y postgresql postgresql-contrib
+sudo apt install -y postgresql postgresql-contrib || handle_error "Error instalando PostgreSQL"
 
 # Start PostgreSQL
-sudo systemctl start postgresql
+sudo systemctl start postgresql || handle_error "Error iniciando PostgreSQL"
 sudo systemctl enable postgresql
 
 # Create database and user
 echo "🗄️ Configurando base de datos PostgreSQL..."
-sudo -u postgres psql -c "CREATE USER whatic WITH PASSWORD '$DB_PASS';"
-sudo -u postgres psql -c "CREATE DATABASE whatic_db WITH OWNER whatic;"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE whatic_db TO whatic;"
+sudo -u postgres psql -c "CREATE USER whatic WITH PASSWORD '$DB_PASS';" || handle_error "Error creando usuario de base de datos"
+sudo -u postgres psql -c "CREATE DATABASE whatic_db WITH OWNER whatic;" || handle_error "Error creando base de datos"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE whatic_db TO whatic;" || handle_error "Error asignando privilegios"
 
 # Install and configure Redis
 echo "📦 Instalando Redis..."
-sudo apt install -y redis-server
+sudo apt install -y redis-server || handle_error "Error instalando Redis"
 
 # Configure Redis
 sudo sed -i 's/supervised no/supervised systemd/' /etc/redis/redis.conf
@@ -94,14 +100,14 @@ sudo sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf
 echo "requirepass $REDIS_PASS" | sudo tee -a /etc/redis/redis.conf
 
 # Start Redis
-sudo systemctl restart redis
+sudo systemctl restart redis || handle_error "Error iniciando Redis"
 sudo systemctl enable redis
 
 # Backend deployment
 echo "🔧 Configurando backend..."
-cd backend
-npm install
-npm run build
+cd backend || handle_error "Error accediendo al directorio backend"
+npm install --no-audit || handle_error "Error instalando dependencias del backend"
+npm run build || handle_error "Error compilando el backend"
 
 # Setup backend environment
 echo "⚙️ Configurando variables de entorno del backend..."
@@ -138,18 +144,18 @@ MAIL_PORT=$SMTP_PORT
 EOL
 
 echo "⚙️ Iniciando migraciones de base de datos..."
-npm run db:migrate
-npm run db:seed
+npm run db:migrate || handle_error "Error en las migraciones"
+npm run db:seed || handle_error "Error en el seeding"
 
 # Start backend with PM2
 pm2 delete whatic-backend 2>/dev/null || true
-pm2 start dist/server.js --name whatic-backend
+pm2 start dist/server.js --name whatic-backend || handle_error "Error iniciando el backend"
 
 # Frontend deployment
 echo "🎨 Configurando frontend..."
-cd ../frontend
-npm install
-npm run build
+cd ../frontend || handle_error "Error accediendo al directorio frontend"
+npm install --no-audit || handle_error "Error instalando dependencias del frontend"
+npm run build || handle_error "Error compilando el frontend"
 
 # Setup frontend environment
 cat > .env << EOL
@@ -159,11 +165,11 @@ EOL
 
 # Install certbot
 echo "🔒 Instalando Certbot..."
-sudo apt-get install -y certbot python3-certbot-nginx
+sudo apt-get install -y certbot python3-certbot-nginx || handle_error "Error instalando Certbot"
 
 # Setup nginx
 echo "🌐 Configurando Nginx..."
-sudo apt-get install -y nginx
+sudo apt-get install -y nginx || handle_error "Error instalando Nginx"
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
@@ -207,11 +213,11 @@ sudo mkdir -p /var/www/whatic
 sudo cp -r build/* /var/www/whatic/
 
 # Restart nginx
-sudo systemctl restart nginx
+sudo systemctl restart nginx || handle_error "Error reiniciando Nginx"
 
 # Install SSL certificate
 echo "🔒 Instalando certificado SSL..."
-sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL
+sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL || echo "⚠️ Warning: Error al instalar SSL, podrás instalarlo manualmente después"
 
 # Save PM2 process list and configure startup
 pm2 save
