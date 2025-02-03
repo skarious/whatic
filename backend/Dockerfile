@@ -2,14 +2,20 @@ FROM node:16-alpine
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++ gcc
+# Install build dependencies and git
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    git \
+    openssh
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with legacy peer deps flag
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -22,4 +28,9 @@ RUN npm prune --production
 
 EXPOSE 8080
 
-CMD ["node", "dist/server.js"]
+# Wait for database script
+COPY wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
+
+# Start command
+CMD ["/bin/sh", "-c", "/wait-for-it.sh postgres:5432 -- node dist/server.js"]
